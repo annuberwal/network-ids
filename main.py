@@ -1,6 +1,7 @@
 import argparse
 from collections import Counter
 from collections import defaultdict
+from datetime import datetime
 
 from scapy.all import IP, ICMP, TCP, UDP, rdpcap, sniff
 
@@ -20,6 +21,7 @@ if args.interface:
 else:
     packets = rdpcap(args.pcap)
 packet_counts = Counter()
+protocol_counts = Counter()
 syn_attempts_by_source = Counter()
 ports_by_pair = defaultdict(set)
 
@@ -58,12 +60,17 @@ for number, packet in enumerate(packets, start=1):
         description = "ICMP"
     else:
         description = "Other IP traffic"
-        
+    
+    protocol_counts[description.split()[0]] += 1    
            
     if args.verbose:
         print(
         f"Packet {number}: {source_ip} -> {destination_ip} | {description}"
     )
+    
+print("\nProtocol summary:")
+for protocol, count in protocol_counts.items():
+    print(f"{protocol}: {count}")    
 
 print("\nPort-scan check:")
 for (source_ip, destination_ip), ports in ports_by_pair.items():
@@ -113,10 +120,18 @@ for source_ip, times in syn_times_by_source.items():
 print(f"\nAlerts found: {alert_count}")
 print("-" * 30)
 
+report_time = datetime.now().astimezone().isoformat(timespec="seconds")
+
 with open("alerts.txt", "w") as alert_file:
     for alert in alerts:
-        alert_file.write(alert + "\n")
+        if alert.startswith("Unusual packet:"):
+            severity = "MEDIUM"
+        else:
+            severity = "HIGH"
 
+        alert_file.write(
+            f"{report_time} | {severity} | {alert}\n"
+        )
 print("Alerts saved to alerts.txt")
 
 print("\nPackets per source IP:")

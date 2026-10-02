@@ -9,6 +9,8 @@ A beginner-friendly, offline network traffic analyzer built with Python and Scap
 - Flags TCP packets with no flags set.
 - Prints alerts in the terminal and saves them to `alerts.txt`.
 - Offers an optional verbose mode to show packet-by-packet details.
+- Summarizes packet counts by protocol.
+- Adds an analysis timestamp and severity to saved alerts.
 
 ## Requirements
 
