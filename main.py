@@ -5,6 +5,7 @@ from datetime import datetime
 
 from scapy.all import IP, ICMP, TCP, UDP, rdpcap, sniff
 
+PACKET_RATE_THRESHOLD = 20
 PORT_SCAN_THRESHOLD = 3
 SYN_ATTEMPT_THRESHOLD = 3
 ATTEMPT_WINDOW_SECONDS = 10
@@ -21,6 +22,7 @@ if args.interface:
 else:
     packets = rdpcap(args.pcap)
 packet_counts = Counter()
+packet_times_by_source = defaultdict(list)
 protocol_counts = Counter()
 syn_attempts_by_source = Counter()
 ports_by_pair = defaultdict(set)
@@ -35,6 +37,7 @@ for number, packet in enumerate(packets, start=1):
     source_ip = packet[IP].src
     destination_ip = packet[IP].dst
     packet_counts[source_ip] += 1
+    packet_times_by_source[source_ip].append(float(packet.time))
     
     
     if TCP in packet and int(packet[TCP].flags) == 0:
@@ -115,7 +118,35 @@ for source_ip, times in syn_times_by_source.items():
         print(
             f"{source_ip}: highest burst was {highest_in_window} SYN packets, "
             "no alert"
-        )                   
+        )  
+        
+print("\nPacket-rate check:")
+for source_ip, times in packet_times_by_source.items():
+    times = sorted(times)
+    left = 0
+    highest_in_window = 0
+
+    for right in range(len(times)):
+        while times[right] - times[left] > ATTEMPT_WINDOW_SECONDS:
+            left += 1
+
+        packets_in_window = right - left + 1
+        highest_in_window = max(highest_in_window, packets_in_window)
+
+    if highest_in_window >= PACKET_RATE_THRESHOLD:
+        alert_count += 1
+        message = (
+            f"High packet rate: {source_ip} sent at least "
+            f"{highest_in_window} packets within "
+            f"{ATTEMPT_WINDOW_SECONDS} seconds"
+        )
+        alerts.append(message)
+        print(message)
+    else:
+        print(
+            f"{source_ip}: highest burst was {highest_in_window} packets, "
+            "no alert"
+        )                         
         
 print(f"\nAlerts found: {alert_count}")
 print("-" * 30)

@@ -1,4 +1,4 @@
-from scapy.all import IP, TCP, wrpcap
+from scapy.all import IP, TCP,UDP, wrpcap
 
 practice_packets = [
     IP(src="192.0.2.10", dst="192.0.2.20") / TCP(sport=40000, dport=22, flags="S"),
@@ -27,3 +27,12 @@ unusual_packet = (
 
 wrpcap("unusual-sample.pcap", [unusual_packet])
 print("Created unusual-sample.pcap with one TCP packet having no flags.")
+
+burst_packets = [
+    IP(src="192.0.2.50", dst="192.0.2.60")
+    / UDP(sport=50000 + number, dport=9999)
+    for number in range(25)
+]
+
+wrpcap("burst-sample.pcap", burst_packets)
+print("Created burst-sample.pcap with 25 practice UDP packets.")
