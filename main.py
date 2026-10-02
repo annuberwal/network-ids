@@ -2,7 +2,7 @@ import argparse
 from collections import Counter
 from collections import defaultdict
 
-from scapy.all import IP, ICMP, TCP, UDP, rdpcap
+from scapy.all import IP, ICMP, TCP, UDP, rdpcap, sniff
 
 PORT_SCAN_THRESHOLD = 3
 SYN_ATTEMPT_THRESHOLD = 3
@@ -11,9 +11,14 @@ syn_times_by_source = defaultdict(list)
 parser = argparse.ArgumentParser(description="Analyze a PCAP file for suspicious traffic.")
 parser.add_argument("pcap", nargs="?", default="scan-sample.pcap")
 parser.add_argument("--verbose", action="store_true", help="Show details for every packet")
+parser.add_argument("--interface", help="Capture on this interface for 15 seconds")
 args = parser.parse_args()
 
-packets = rdpcap(args.pcap)
+if args.interface:
+    print(f"Capturing on {args.interface} for 15 seconds...")
+    packets = sniff(iface=args.interface, timeout=15, store=True)
+else:
+    packets = rdpcap(args.pcap)
 packet_counts = Counter()
 syn_attempts_by_source = Counter()
 ports_by_pair = defaultdict(set)
