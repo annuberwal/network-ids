@@ -70,8 +70,12 @@ Detection thresholds are set near the top of `main.py`:
 - `ATTEMPT_WINDOW_SECONDS`: time period used for the SYN-attempt check.
 
 ## Safety and scope
-This project analyzes saved packet captures and can capture traffic live for 15 seconds on a selected interface. Live capture requires elevated privileges. Use it only on your own system or traffic you are authorized to inspect. Live packets are analyzed in memory; this mode does not save a new PCAP file.
+Live capture runs on the selected interface until Ctrl+C or until 5,000 packets have been captured. Captured packets are analyzed after capture stops; this mode does not save a new PCAP file. Run it only on your own system or on traffic you are authorized to inspect.
 
+Example:
+
+```bash
+sudo .venv/bin/python main.py --interface lo
 ## Limitations
 
 The rules are simple learning examples. They can produce false positives or miss patterns that need more advanced detection. An alert is a reason to investigate, not proof of an attack.

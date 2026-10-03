@@ -17,10 +17,23 @@ parser.add_argument("--interface", help="Capture on this interface for 15 second
 args = parser.parse_args()
 
 if args.interface:
-    print(f"Capturing on {args.interface} for 15 seconds...")
-    packets = sniff(iface=args.interface, timeout=15, store=True)
+    print(f"Capturing on {args.interface}. Press Ctrl+C to stop.")
+    packets = []
+
+    try:
+        sniff(
+            iface=args.interface,
+            count=5000,
+            prn=packets.append,
+            store=False,
+        )
+    except KeyboardInterrupt:
+        print("\nCapture stopped.")
+
+    print(f"Captured {len(packets)} packets. Analyzing...")
 else:
-    packets = rdpcap(args.pcap)
+    packets = rdpcap(args.pcap)    
+    
 packet_counts = Counter()
 packet_times_by_source = defaultdict(list)
 protocol_counts = Counter()
