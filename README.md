@@ -89,6 +89,4 @@ sudo .venv/bin/python live_monitor.py --interface lo
 
 ## Limitations
 
-## Limitations
-
 The rules are simple learning examples. They can produce false positives or miss patterns that need more advanced detection. An alert is a reason to investigate, not proof of an attack.
