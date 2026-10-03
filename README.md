@@ -64,7 +64,12 @@ This creates the practice `.pcap` files locally. It does not send packets over t
 
 ## Configuration
 
-Detection thresholds are set near the top of `main.py`:
+Detection settings are stored in `config.json` and used by both the PCAP analyzer and live monitor:
+
+- `port_scan_threshold`: distinct destination ports needed for a port-scan alert.
+- `syn_attempt_threshold`: TCP SYN packets needed for a connection-attempt alert.
+- `packet_rate_threshold`: packets needed for a packet-rate alert.
+- `window_seconds`: time window used by burst checks.
 
 - `PORT_SCAN_THRESHOLD`: number of distinct destination ports that triggers a possible port-scan alert.
 - `SYN_ATTEMPT_THRESHOLD`: number of TCP SYN packets that triggers a high-attempt alert.
