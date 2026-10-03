@@ -12,6 +12,7 @@ A beginner-friendly, offline network traffic analyzer built with Python and Scap
 - Summarizes packet counts by protocol.
 - Adds an analysis timestamp and severity to saved alerts.
 - Flags high packet bursts from one source within the 10-second window.
+- Monitors live traffic and prints alerts as packets arrive.
 
 ## Requirements
 
