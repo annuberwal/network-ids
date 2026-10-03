@@ -5,10 +5,13 @@ from datetime import datetime
 
 from scapy.all import IP, TCP, sniff
 
-WINDOW_SECONDS = 10
-PORT_SCAN_THRESHOLD = 3
-SYN_ATTEMPT_THRESHOLD = 3
-PACKET_RATE_THRESHOLD = 20
+with open("config.json", encoding="utf-8") as config_file:
+    settings = json.load(config_file)
+
+WINDOW_SECONDS = settings["window_seconds"]
+PORT_SCAN_THRESHOLD = settings["port_scan_threshold"]
+SYN_ATTEMPT_THRESHOLD = settings["syn_attempt_threshold"]
+PACKET_RATE_THRESHOLD = settings["packet_rate_threshold"]
 
 ports_by_pair = defaultdict(set)
 syn_times_by_source = defaultdict(deque)

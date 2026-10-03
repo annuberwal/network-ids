@@ -1,0 +1,6 @@
+{
+  "port_scan_threshold": 3,
+  "syn_attempt_threshold": 3,
+  "packet_rate_threshold": 20,
+  "window_seconds": 10
+}
