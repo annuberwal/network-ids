@@ -2,6 +2,7 @@ import argparse
 from collections import Counter
 from collections import defaultdict
 from datetime import datetime
+import json 
 
 with open("config.json", encoding="utf-8") as config_file:
     settings = json.load(config_file)
@@ -13,15 +14,11 @@ ATTEMPT_WINDOW_SECONDS = settings["window_seconds"]
 
 from scapy.all import IP, ICMP, TCP, UDP, rdpcap, sniff
 
-PACKET_RATE_THRESHOLD = 20
-PORT_SCAN_THRESHOLD = 3
-SYN_ATTEMPT_THRESHOLD = 3
-ATTEMPT_WINDOW_SECONDS = 10
 syn_times_by_source = defaultdict(list)
 parser = argparse.ArgumentParser(description="Analyze a PCAP file for suspicious traffic.")
 parser.add_argument("pcap", nargs="?", default="scan-sample.pcap")
 parser.add_argument("--verbose", action="store_true", help="Show details for every packet")
-parser.add_argument("--interface", help="Capture on this interface for 15 seconds")
+parser.add_argument("--interface", help="Capture live traffic on this interface")
 args = parser.parse_args()
 
 if args.interface:

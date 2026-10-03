@@ -2,6 +2,7 @@ import argparse
 import time
 from collections import defaultdict, deque
 from datetime import datetime
+import json
 
 from scapy.all import IP, TCP, sniff
 

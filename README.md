@@ -71,17 +71,24 @@ Detection settings are stored in `config.json` and used by both the PCAP analyze
 - `packet_rate_threshold`: packets needed for a packet-rate alert.
 - `window_seconds`: time window used by burst checks.
 
-- `PORT_SCAN_THRESHOLD`: number of distinct destination ports that triggers a possible port-scan alert.
-- `SYN_ATTEMPT_THRESHOLD`: number of TCP SYN packets that triggers a high-attempt alert.
-- `ATTEMPT_WINDOW_SECONDS`: time period used for the SYN-attempt check.
-
 ## Safety and scope
-Live capture runs on the selected interface until Ctrl+C or until 5,000 packets have been captured. Captured packets are analyzed after capture stops; this mode does not save a new PCAP file. Run it only on your own system or on traffic you are authorized to inspect.
 
-Example:
+Use these tools only on your own system or on traffic you are authorized to inspect.
 
-```bash
+`main.py` captures on the selected interface until Ctrl+C or 5,000 packets, then analyzes the captured packets. It does not save a new PCAP file.
+
+~~~bash
 sudo .venv/bin/python main.py --interface lo
+~~~
+
+`live_monitor.py` checks packets as they arrive and prints alerts immediately. Press Ctrl+C to stop it.
+
+~~~bash
+sudo .venv/bin/python live_monitor.py --interface lo
+~~~
+
+## Limitations
+
 ## Limitations
 
 The rules are simple learning examples. They can produce false positives or miss patterns that need more advanced detection. An alert is a reason to investigate, not proof of an attack.
