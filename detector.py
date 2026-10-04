@@ -13,6 +13,7 @@ class IDSDetector:
         self.packet_times = defaultdict(deque)
         self.syn_times = defaultdict(deque)
         self.ports_by_pair = defaultdict(set)
+        self.alerted_scan_pairs = set()
         self.seen_unusual_flows = set()
 
     def _remember_recent_time(self, time_queue, current_time):
@@ -71,7 +72,11 @@ class IDSDetector:
 
             pair = (source_ip, destination_ip)
             self.ports_by_pair[pair].add(tcp.dport)
-            if len(self.ports_by_pair[pair]) == self.port_threshold:
+            if (
+                len(self.ports_by_pair[pair]) >= self.port_threshold
+                and pair not in self.alerted_scan_pairs
+            ):
+                self.alerted_scan_pairs.add(pair)
                 alerts.append((
                     "HIGH",
                     f"Possible port scan: {source_ip} tried "
