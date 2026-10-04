@@ -101,3 +101,13 @@ The IDS checks authorized lab traffic for:
 - Unusual TCP packets: a TCP packet has no flags set.
 
 Thresholds are configured in `config.json`. Alerts are shown in the terminal and saved to `alerts.txt`.
+
+## Quick demo
+
+Run the included practice captures:
+
+```bash
+.venv/bin/python main.py scan-sample.pcap
+.venv/bin/python main.py normal-sample.pcap
+.venv/bin/python main.py unusual-sample.pcap
+.venv/bin/python main.py burst-sample.pcap
