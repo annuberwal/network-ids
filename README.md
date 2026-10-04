@@ -90,3 +90,14 @@ sudo .venv/bin/python live_monitor.py --interface lo
 # Limitations
 
 The rules are simple learning examples. They can produce false positives or miss patterns that need more advanced detection. An alert is a reason to investigate, not proof of an attack.
+
+## Detection rules
+
+The IDS checks authorized lab traffic for:
+
+- Port scanning: one source sends TCP SYN packets to 3 or more different ports on the same target.
+- Repeated connection attempts: one source sends 3 or more TCP SYN packets within 10 seconds.
+- High packet rate: one source sends 20 or more packets within 10 seconds.
+- Unusual TCP packets: a TCP packet has no flags set.
+
+Thresholds are configured in `config.json`. Alerts are shown in the terminal and saved to `alerts.txt`.
