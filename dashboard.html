@@ -48,8 +48,11 @@
     .analysis-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
     .analysis-column { min-width: 0; padding: 15px; border: 1px solid #263253; border-radius: 10px; background: #0b1327; }
     .analysis-column h3 { margin: 0 0 12px; font-size: 14px; }
-    .result-row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid #222d49; font-size: 13px; overflow-wrap: anywhere; }
-    .result-row span:last-child { color: #b8c5e2; text-align: right; }
+    .bar-row { padding: 9px 0; border-top: 1px solid #222d49; }
+    .bar-heading { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12px; overflow-wrap: anywhere; }
+    .bar-heading span:last-child { color: #b8c5e2; }
+    .bar-track { height: 7px; overflow: hidden; border-radius: 99px; background: #202c48; }
+    .bar-fill { height: 100%; min-width: 2px; border-radius: inherit; background: linear-gradient(90deg, #647ff0, #46c9cf); }
     .analysis-alert { padding: 10px 0; border-top: 1px solid #222d49; font-size: 13px; line-height: 1.45; }
     .analysis-alert .badge { display: inline-block; margin: 0 7px 5px 0; }
     #alerts { padding: 4px 22px; }
@@ -202,17 +205,28 @@
       window.setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
     });
 
-    function renderRows(container, rows, emptyMessage) {
+    function renderBars(container, rows, emptyMessage) {
       container.replaceChildren();
       if (rows.length === 0) {
         addText(container, "div", "muted", emptyMessage);
         return;
       }
+      const maximum = Math.max(...rows.map(([, value]) => value));
       for (const [label, value] of rows) {
         const row = document.createElement("div");
-        row.className = "result-row";
-        addText(row, "span", "", label);
-        addText(row, "span", "", value);
+        row.className = "bar-row";
+        const heading = document.createElement("div");
+        heading.className = "bar-heading";
+        addText(heading, "span", "", label);
+        addText(heading, "span", "", value);
+        row.appendChild(heading);
+        const track = document.createElement("div");
+        track.className = "bar-track";
+        const fill = document.createElement("div");
+        fill.className = "bar-fill";
+        fill.style.width = `${Math.max(4, (value / maximum) * 100)}%`;
+        track.appendChild(fill);
+        row.appendChild(track);
         container.appendChild(row);
       }
     }
@@ -234,12 +248,12 @@
         summary.appendChild(card);
       }
 
-      renderRows(
+      renderBars(
         document.getElementById("protocol-results"),
         Object.entries(result.protocols),
         "No IP protocols found."
       );
-      renderRows(
+      renderBars(
         document.getElementById("source-results"),
         result.sources.map((source) => [source.ip, source.count]),
         "No source IPs found."

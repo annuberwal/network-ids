@@ -116,7 +116,7 @@ Run the included practice captures:
 
 ## Local dashboard
 
-The dashboard displays recent alerts saved in `alerts.txt`. It refreshes automatically, lets you search alerts and filter by severity, export the visible alerts as CSV, and listens only on this computer. It can also analyze `.pcap` files in the project folder and show packet, protocol, source IP, and detection summaries. PCAP analysis results appear on the page and do not overwrite `alerts.txt`.
+The dashboard displays recent alerts saved in `alerts.txt`. It refreshes automatically, lets you search alerts and filter by severity, export the visible alerts as CSV, and listens only on this computer. It can also analyze `.pcap` files in the project folder and show packet totals, visual protocol and source IP counts, and detection alerts. PCAP analysis results appear on the page and do not overwrite `alerts.txt`.
 
 Start the dashboard in one terminal:
 
