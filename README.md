@@ -115,7 +115,7 @@ Run the included practice captures:
 
 ## Local dashboard
 
-The dashboard displays recent alerts saved in `alerts.txt`. It refreshes automatically and listens only on this computer.
+The dashboard displays recent alerts saved in `alerts.txt`. It refreshes automatically, lets you search alerts and filter by severity, and listens only on this computer.
 
 Start the dashboard in one terminal:
 

@@ -29,6 +29,10 @@
     .panel-head { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px; border-bottom: 1px solid #263253; }
     h2 { margin: 0; font-size: 18px; }
     #updated { color: #9aa8c7; font-size: 12px; }
+    .filters { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 12px; padding: 14px 22px; border-bottom: 1px solid #263253; }
+    .filters input, .filters select { width: 100%; padding: 11px 12px; border: 1px solid #344365; border-radius: 9px; background: #0b1327; color: #edf2ff; font: inherit; }
+    .filters input::placeholder { color: #8290ae; }
+    .filters input:focus, .filters select:focus { outline: 2px solid #7893ff; outline-offset: 1px; }
     #alerts { padding: 4px 22px; }
     .alert { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 14px; padding: 17px 0; border-bottom: 1px solid #222d49; }
     .alert:last-child { border-bottom: 0; }
@@ -46,6 +50,7 @@
       .value { font-size: 28px; }
       .alert { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
       .panel-head, #alerts { padding-left: 16px; padding-right: 16px; }
+      .filters { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
     }
   </style>
 </head>
@@ -68,12 +73,23 @@
 
     <section class="panel">
       <div class="panel-head"><h2>Recent alerts</h2><span id="updated">Waiting for alert log…</span></div>
+      <div class="filters">
+        <input id="search" type="search" placeholder="Search message, IP, or time" aria-label="Search alerts">
+        <select id="severity-filter" aria-label="Filter by severity">
+          <option value="ALL">All severities</option>
+          <option value="HIGH">High severity</option>
+          <option value="MEDIUM">Medium severity</option>
+        </select>
+      </div>
       <div id="alerts"><div class="empty">No alerts yet. Start the IDS monitor to see alerts here.</div></div>
     </section>
     <footer>Refreshes automatically · Displays up to the latest 100 alerts from alerts.txt</footer>
   </main>
   <script>
     const alertsElement = document.getElementById("alerts");
+    const searchElement = document.getElementById("search");
+    const severityElement = document.getElementById("severity-filter");
+    let currentAlerts = [];
 
     function addText(parent, tag, className, value) {
       const element = document.createElement(tag);
@@ -83,35 +99,53 @@
       return element;
     }
 
+    function renderAlerts() {
+      const query = searchElement.value.trim().toLowerCase();
+      const severity = severityElement.value;
+      const visibleAlerts = currentAlerts.filter((alert) => {
+        const matchesSeverity = severity === "ALL" || alert.severity === severity;
+        const searchableText = `${alert.message} ${alert.timestamp} ${alert.severity}`.toLowerCase();
+        return matchesSeverity && searchableText.includes(query);
+      });
+      alertsElement.replaceChildren();
+
+      if (visibleAlerts.length === 0) {
+        const emptyMessage = currentAlerts.length === 0
+          ? "No alerts yet. Start the IDS monitor to see alerts here."
+          : "No alerts match these filters.";
+        addText(alertsElement, "div", "empty", emptyMessage);
+        return;
+      }
+
+      for (const alert of visibleAlerts) {
+        const row = document.createElement("article");
+        row.className = "alert";
+        addText(row, "span", "badge " + alert.severity, alert.severity);
+        const details = document.createElement("div");
+        addText(details, "div", "message", alert.message);
+        addText(details, "div", "time", alert.timestamp);
+        row.appendChild(details);
+        alertsElement.appendChild(row);
+      }
+    }
+
+    searchElement.addEventListener("input", renderAlerts);
+    severityElement.addEventListener("change", renderAlerts);
+
     async function refreshAlerts() {
       try {
         const response = await fetch("/api/alerts", { cache: "no-store" });
         if (!response.ok) throw new Error("Could not read alerts");
         const data = await response.json();
         const alerts = data.alerts;
+        currentAlerts = alerts;
         const high = alerts.filter((alert) => alert.severity === "HIGH").length;
         const medium = alerts.filter((alert) => alert.severity === "MEDIUM").length;
         document.getElementById("total").textContent = alerts.length;
         document.getElementById("high").textContent = high;
         document.getElementById("medium").textContent = medium;
         document.getElementById("updated").textContent = "Updated " + new Date().toLocaleTimeString();
-        alertsElement.replaceChildren();
-
-        if (alerts.length === 0) {
-          addText(alertsElement, "div", "empty", "No alerts yet. Start the IDS monitor to see alerts here.");
-          return;
-        }
-
-        for (const alert of alerts) {
-          const row = document.createElement("article");
-          row.className = "alert";
-          addText(row, "span", "badge " + alert.severity, alert.severity);
-          const details = document.createElement("div");
-          addText(details, "div", "message", alert.message);
-          addText(details, "div", "time", alert.timestamp);
-          row.appendChild(details);
-          alertsElement.appendChild(row);
-        }
+        renderAlerts();
       } catch (_error) {
         document.getElementById("updated").textContent = "Waiting for the local IDS dashboard…";
       }
