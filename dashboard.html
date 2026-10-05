@@ -33,6 +33,22 @@
     .filters input, .filters select { width: 100%; padding: 11px 12px; border: 1px solid #344365; border-radius: 9px; background: #0b1327; color: #edf2ff; font: inherit; }
     .filters input::placeholder { color: #8290ae; }
     .filters input:focus, .filters select:focus { outline: 2px solid #7893ff; outline-offset: 1px; }
+    .pcap-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 18px 22px; }
+    .pcap-tools select, .pcap-tools button { padding: 11px 13px; border: 1px solid #344365; border-radius: 9px; background: #0b1327; color: #edf2ff; font: inherit; }
+    .pcap-tools button { border-color: #5d77df; background: #344caa; font-weight: 700; cursor: pointer; }
+    .pcap-tools button:disabled { cursor: wait; opacity: .65; }
+    #analysis-status { min-height: 20px; padding: 0 22px 12px; color: #9aa8c7; font-size: 13px; }
+    #analysis-results { padding: 0 22px 22px; }
+    .analysis-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 18px; }
+    .analysis-stat { padding: 13px; border: 1px solid #263253; border-radius: 10px; background: #0b1327; }
+    .analysis-stat strong { display: block; margin-top: 5px; font-size: 22px; }
+    .analysis-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .analysis-column { min-width: 0; padding: 15px; border: 1px solid #263253; border-radius: 10px; background: #0b1327; }
+    .analysis-column h3 { margin: 0 0 12px; font-size: 14px; }
+    .result-row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid #222d49; font-size: 13px; overflow-wrap: anywhere; }
+    .result-row span:last-child { color: #b8c5e2; text-align: right; }
+    .analysis-alert { padding: 10px 0; border-top: 1px solid #222d49; font-size: 13px; line-height: 1.45; }
+    .analysis-alert .badge { display: inline-block; margin: 0 7px 5px 0; }
     #alerts { padding: 4px 22px; }
     .alert { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 14px; padding: 17px 0; border-bottom: 1px solid #222d49; }
     .alert:last-child { border-bottom: 0; }
@@ -51,6 +67,10 @@
       .alert { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
       .panel-head, #alerts { padding-left: 16px; padding-right: 16px; }
       .filters { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
+      .pcap-tools { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
+      #analysis-status, #analysis-results { padding-left: 16px; padding-right: 16px; }
+      .analysis-summary { grid-template-columns: 1fr; }
+      .analysis-columns { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -83,12 +103,32 @@
       </div>
       <div id="alerts"><div class="empty">No alerts yet. Start the IDS monitor to see alerts here.</div></div>
     </section>
+    <section class="panel" style="margin-top: 22px">
+      <div class="panel-head"><h2>Analyze a PCAP</h2><span>Practice files in the project folder</span></div>
+      <div class="pcap-tools">
+        <select id="pcap-select" aria-label="Select a PCAP file">
+          <option value="">Loading PCAP files…</option>
+        </select>
+        <button id="analyze-button" type="button">Analyze selected PCAP</button>
+      </div>
+      <div id="analysis-status" role="status">Choose a project PCAP to see its analysis here.</div>
+      <div id="analysis-results" hidden>
+        <div class="analysis-summary" id="analysis-summary"></div>
+        <div class="analysis-columns">
+          <section class="analysis-column"><h3>Protocol summary</h3><div id="protocol-results"></div></section>
+          <section class="analysis-column"><h3>Packets per source IP</h3><div id="source-results"></div></section>
+          <section class="analysis-column"><h3>Detection alerts</h3><div id="pcap-alert-results"></div></section>
+        </div>
+      </div>
+    </section>
     <footer>Refreshes automatically · Displays up to the latest 100 alerts from alerts.txt</footer>
   </main>
   <script>
     const alertsElement = document.getElementById("alerts");
     const searchElement = document.getElementById("search");
     const severityElement = document.getElementById("severity-filter");
+    const pcapSelect = document.getElementById("pcap-select");
+    const analyzeButton = document.getElementById("analyze-button");
     let currentAlerts = [];
 
     function addText(parent, tag, className, value) {
@@ -132,6 +172,116 @@
     searchElement.addEventListener("input", renderAlerts);
     severityElement.addEventListener("change", renderAlerts);
 
+    function renderRows(container, rows, emptyMessage) {
+      container.replaceChildren();
+      if (rows.length === 0) {
+        addText(container, "div", "muted", emptyMessage);
+        return;
+      }
+      for (const [label, value] of rows) {
+        const row = document.createElement("div");
+        row.className = "result-row";
+        addText(row, "span", "", label);
+        addText(row, "span", "", value);
+        container.appendChild(row);
+      }
+    }
+
+    function showAnalysis(result) {
+      const results = document.getElementById("analysis-results");
+      const summary = document.getElementById("analysis-summary");
+      summary.replaceChildren();
+      const stats = [
+        ["Capture", result.filename],
+        ["Packets", result.total_packets],
+        ["IP packets", result.ip_packets],
+      ];
+      for (const [label, value] of stats) {
+        const card = document.createElement("div");
+        card.className = "analysis-stat";
+        addText(card, "span", "label", label);
+        addText(card, "strong", "", value);
+        summary.appendChild(card);
+      }
+
+      renderRows(
+        document.getElementById("protocol-results"),
+        Object.entries(result.protocols),
+        "No IP protocols found."
+      );
+      renderRows(
+        document.getElementById("source-results"),
+        result.sources.map((source) => [source.ip, source.count]),
+        "No source IPs found."
+      );
+
+      const alertContainer = document.getElementById("pcap-alert-results");
+      alertContainer.replaceChildren();
+      if (result.alerts.length === 0) {
+        addText(alertContainer, "div", "muted", "No detection alerts in this capture.");
+      } else {
+        for (const alert of result.alerts) {
+          const item = document.createElement("div");
+          item.className = "analysis-alert";
+          addText(item, "span", "badge " + alert.severity, alert.severity);
+          addText(item, "span", "", alert.message);
+          alertContainer.appendChild(item);
+        }
+      }
+      results.hidden = false;
+    }
+
+    async function loadCaptureList() {
+      try {
+        const response = await fetch("/api/captures", { cache: "no-store" });
+        if (!response.ok) throw new Error("Could not list PCAPs");
+        const data = await response.json();
+        pcapSelect.replaceChildren();
+        if (data.captures.length === 0) {
+          const option = document.createElement("option");
+          option.value = "";
+          option.textContent = "No PCAP files found in project folder";
+          pcapSelect.appendChild(option);
+          analyzeButton.disabled = true;
+          return;
+        }
+        for (const filename of data.captures) {
+          const option = document.createElement("option");
+          option.value = filename;
+          option.textContent = filename;
+          pcapSelect.appendChild(option);
+        }
+      } catch (_error) {
+        pcapSelect.replaceChildren();
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Could not load PCAP list";
+        pcapSelect.appendChild(option);
+        analyzeButton.disabled = true;
+      }
+    }
+
+    analyzeButton.addEventListener("click", async () => {
+      if (!pcapSelect.value) return;
+      analyzeButton.disabled = true;
+      document.getElementById("analysis-status").textContent = "Analyzing " + pcapSelect.value + "…";
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: pcapSelect.value }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Analysis failed");
+        showAnalysis(result);
+        document.getElementById("analysis-status").textContent = "Analysis complete. These results are shown here and are not added to alerts.txt.";
+      } catch (error) {
+        document.getElementById("analysis-status").textContent = error.message;
+      } finally {
+        analyzeButton.disabled = false;
+      }
+    });
+
     async function refreshAlerts() {
       try {
         const response = await fetch("/api/alerts", { cache: "no-store" });
@@ -152,6 +302,7 @@
     }
 
     refreshAlerts();
+    loadCaptureList();
     window.setInterval(refreshAlerts, 2000);
   </script>
 </body>

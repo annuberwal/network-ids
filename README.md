@@ -13,6 +13,7 @@ A beginner-friendly, offline network traffic analyzer built with Python and Scap
 - Adds an analysis timestamp and severity to saved alerts.
 - Flags high packet bursts from one source within the 10-second window.
 - Monitors live traffic and prints alerts as packets arrive.
+- Provides a local web dashboard for alert search, severity filtering, and practice PCAP analysis.
 
 ## Requirements
 
@@ -115,7 +116,7 @@ Run the included practice captures:
 
 ## Local dashboard
 
-The dashboard displays recent alerts saved in `alerts.txt`. It refreshes automatically, lets you search alerts and filter by severity, and listens only on this computer.
+The dashboard displays recent alerts saved in `alerts.txt`. It refreshes automatically, lets you search alerts and filter by severity, and listens only on this computer. It can also analyze `.pcap` files in the project folder and show packet, protocol, source IP, and detection summaries. PCAP analysis results appear on the page and do not overwrite `alerts.txt`.
 
 Start the dashboard in one terminal:
 
