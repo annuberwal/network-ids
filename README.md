@@ -111,3 +111,22 @@ Run the included practice captures:
 .venv/bin/python main.py normal-sample.pcap
 .venv/bin/python main.py unusual-sample.pcap
 .venv/bin/python main.py burst-sample.pcap
+```
+
+## Local dashboard
+
+The dashboard displays recent alerts saved in `alerts.txt`. It refreshes automatically and listens only on this computer.
+
+Start the dashboard in one terminal:
+
+```bash
+.venv/bin/python dashboard.py
+```
+
+Open `http://127.0.0.1:8000` in your browser. To populate it with live alerts, open a second terminal and start the monitor on an interface you are authorized to inspect:
+
+```bash
+sudo .venv/bin/python live_monitor.py --interface lo
+```
+
+Keep both terminals open while using the dashboard. Press Ctrl+C in each terminal to stop its program.
