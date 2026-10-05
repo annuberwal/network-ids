@@ -27,8 +27,11 @@
     .value { margin-top: 10px; font-size: 34px; font-weight: 750; }
     .panel { overflow: hidden; }
     .panel-head { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px; border-bottom: 1px solid #263253; }
+    .panel-actions { display: flex; align-items: center; gap: 12px; }
     h2 { margin: 0; font-size: 18px; }
     #updated { color: #9aa8c7; font-size: 12px; }
+    #export-csv { padding: 8px 11px; border: 1px solid #344365; border-radius: 8px; background: #0b1327; color: #dce5ff; font: inherit; font-size: 12px; cursor: pointer; }
+    #export-csv:disabled { cursor: not-allowed; opacity: .5; }
     .filters { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 12px; padding: 14px 22px; border-bottom: 1px solid #263253; }
     .filters input, .filters select { width: 100%; padding: 11px 12px; border: 1px solid #344365; border-radius: 9px; background: #0b1327; color: #edf2ff; font: inherit; }
     .filters input::placeholder { color: #8290ae; }
@@ -66,6 +69,8 @@
       .value { font-size: 28px; }
       .alert { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
       .panel-head, #alerts { padding-left: 16px; padding-right: 16px; }
+      .panel-head { align-items: flex-start; flex-direction: column; }
+      .panel-actions { width: 100%; justify-content: space-between; }
       .filters { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
       .pcap-tools { grid-template-columns: 1fr; padding-left: 16px; padding-right: 16px; }
       #analysis-status, #analysis-results { padding-left: 16px; padding-right: 16px; }
@@ -92,7 +97,13 @@
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>Recent alerts</h2><span id="updated">Waiting for alert log…</span></div>
+      <div class="panel-head">
+        <h2>Recent alerts</h2>
+        <div class="panel-actions">
+          <span id="updated">Waiting for alert log…</span>
+          <button id="export-csv" type="button" disabled>Export visible alerts</button>
+        </div>
+      </div>
       <div class="filters">
         <input id="search" type="search" placeholder="Search message, IP, or time" aria-label="Search alerts">
         <select id="severity-filter" aria-label="Filter by severity">
@@ -127,9 +138,11 @@
     const alertsElement = document.getElementById("alerts");
     const searchElement = document.getElementById("search");
     const severityElement = document.getElementById("severity-filter");
+    const exportButton = document.getElementById("export-csv");
     const pcapSelect = document.getElementById("pcap-select");
     const analyzeButton = document.getElementById("analyze-button");
     let currentAlerts = [];
+    let visibleAlerts = [];
 
     function addText(parent, tag, className, value) {
       const element = document.createElement(tag);
@@ -142,12 +155,13 @@
     function renderAlerts() {
       const query = searchElement.value.trim().toLowerCase();
       const severity = severityElement.value;
-      const visibleAlerts = currentAlerts.filter((alert) => {
+      visibleAlerts = currentAlerts.filter((alert) => {
         const matchesSeverity = severity === "ALL" || alert.severity === severity;
         const searchableText = `${alert.message} ${alert.timestamp} ${alert.severity}`.toLowerCase();
         return matchesSeverity && searchableText.includes(query);
       });
       alertsElement.replaceChildren();
+      exportButton.disabled = visibleAlerts.length === 0;
 
       if (visibleAlerts.length === 0) {
         const emptyMessage = currentAlerts.length === 0
@@ -171,6 +185,22 @@
 
     searchElement.addEventListener("input", renderAlerts);
     severityElement.addEventListener("change", renderAlerts);
+
+    exportButton.addEventListener("click", () => {
+      const escapeCsv = (value) => `"${String(value).replaceAll('"', '""')}"`;
+      const rows = [
+        ["Timestamp", "Severity", "Message"],
+        ...visibleAlerts.map((alert) => [alert.timestamp, alert.severity, alert.message]),
+      ];
+      const csv = "\uFEFF" + rows.map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+      const file = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const fileUrl = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = "network-ids-alerts.csv";
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
+    });
 
     function renderRows(container, rows, emptyMessage) {
       container.replaceChildren();
