@@ -2,7 +2,7 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from scapy.all import ICMP, IP, TCP, UDP, rdpcap
+from scapy.all import ICMP, IP, IPv6, TCP, UDP, rdpcap
 
 from detector import IDSDetector
 
@@ -106,17 +106,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def analyze_capture(self, capture_path):
         packets = rdpcap(str(capture_path))
         detector = IDSDetector(SETTINGS)
-        protocols = {"TCP": 0, "UDP": 0, "ICMP": 0, "Other": 0}
+        protocols = {"TCP": 0, "UDP": 0, "ICMP": 0, "ICMPv6": 0, "Other": 0}
         source_counts = {}
         alerts = []
         ip_packet_count = 0
 
         for packet in packets:
-            if IP not in packet:
+            if IP in packet:
+                source_ip = packet[IP].src
+            elif IPv6 in packet:
+                source_ip = packet[IPv6].src
+            else:
                 continue
 
             ip_packet_count += 1
-            source_ip = packet[IP].src
             source_counts[source_ip] = source_counts.get(source_ip, 0) + 1
 
             if TCP in packet:
@@ -125,6 +128,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 protocols["UDP"] += 1
             elif ICMP in packet:
                 protocols["ICMP"] += 1
+            elif any(layer.__name__.startswith("ICMPv6") for layer in packet.layers()):
+                protocols["ICMPv6"] += 1
             else:
                 protocols["Other"] += 1
 

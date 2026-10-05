@@ -12,7 +12,7 @@ SYN_ATTEMPT_THRESHOLD = settings["syn_attempt_threshold"]
 PACKET_RATE_THRESHOLD = settings["packet_rate_threshold"]
 ATTEMPT_WINDOW_SECONDS = settings["window_seconds"]
 
-from scapy.all import IP, ICMP, TCP, UDP, rdpcap, sniff
+from scapy.all import IP, IPv6, ICMP, TCP, UDP, rdpcap, sniff
 from detector import IDSDetector
 
 parser = argparse.ArgumentParser(description="Analyze a PCAP file for suspicious traffic.")
@@ -48,11 +48,15 @@ alert_count = 0
 alerts = []
 
 for number, packet in enumerate(packets, start=1):
-    if IP not in packet:
+    if IP in packet:
+        source_ip = packet[IP].src
+        destination_ip = packet[IP].dst
+    elif IPv6 in packet:
+        source_ip = packet[IPv6].src
+        destination_ip = packet[IPv6].dst
+    else:
         continue
 
-    source_ip = packet[IP].src
-    destination_ip = packet[IP].dst
     packet_counts[source_ip] += 1
     
     for severity, message in detector.inspect(packet):
@@ -70,6 +74,8 @@ for number, packet in enumerate(packets, start=1):
         )
     elif ICMP in packet:
         description = "ICMP"
+    elif any(layer.__name__.startswith("ICMPv6") for layer in packet.layers()):
+        description = "ICMPv6"
     else:
         description = "Other IP traffic"
     

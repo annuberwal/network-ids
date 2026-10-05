@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
 
-from scapy.all import IP, TCP
+from scapy.all import IP, IPv6, TCP
 
 
 class IDSDetector:
@@ -27,11 +27,14 @@ class IDSDetector:
     def inspect(self, packet):
         alerts = []
 
-        if IP not in packet:
+        if IP in packet:
+            source_ip = packet[IP].src
+            destination_ip = packet[IP].dst
+        elif IPv6 in packet:
+            source_ip = packet[IPv6].src
+            destination_ip = packet[IPv6].dst
+        else:
             return alerts
-
-        source_ip = packet[IP].src
-        destination_ip = packet[IP].dst
         packet_time = float(packet.time)
 
         recent_packets = self._remember_recent_time(

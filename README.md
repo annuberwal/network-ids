@@ -4,12 +4,12 @@ A beginner-friendly, offline network traffic analyzer built with Python and Scap
 
 ## Features
 
-- Detects TCP SYN packets sent to several different ports on the same target.
+- Detects IPv4 and IPv6 traffic, including TCP SYN packets sent to several different ports on the same target.
 - Detects a high number of TCP SYN packets from one source within a 10-second window.
 - Flags TCP packets with no flags set.
 - Prints alerts in the terminal and saves them to `alerts.txt`.
 - Offers an optional verbose mode to show packet-by-packet details.
-- Summarizes packet counts by protocol.
+- Summarizes IPv4 and IPv6 packet counts by protocol.
 - Adds an analysis timestamp and severity to saved alerts.
 - Flags high packet bursts from one source within the 10-second window.
 - Monitors live traffic and prints alerts as packets arrive.
@@ -59,9 +59,10 @@ python main.py
 
 ```bash
 python make_sample.py
+python make_ipv6_sample.py
 ```
 
-This creates the practice `.pcap` files locally. It does not send packets over the network.
+These commands create the practice `.pcap` files locally, including an IPv6 port-scan example. They do not send packets over the network.
 
 ## Configuration
 
@@ -112,6 +113,7 @@ Run the included practice captures:
 .venv/bin/python main.py normal-sample.pcap
 .venv/bin/python main.py unusual-sample.pcap
 .venv/bin/python main.py burst-sample.pcap
+.venv/bin/python main.py ipv6-sample.pcap
 ```
 
 ## Local dashboard
