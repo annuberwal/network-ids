@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
 
-from scapy.all import IP, IPv6, TCP
+from scapy.all import IP, IPv6, TCP, UDP
 
 
 class IDSDetector:
@@ -14,6 +14,8 @@ class IDSDetector:
         self.syn_times = defaultdict(deque)
         self.ports_by_pair = defaultdict(set)
         self.alerted_scan_pairs = set()
+        self.udp_ports_by_pair = defaultdict(set)
+        self.alerted_udp_scan_pairs = set()
         self.seen_unusual_flows = set()
 
     def _remember_recent_time(self, time_queue, current_time):
@@ -46,7 +48,23 @@ class IDSDetector:
                 f"High packet rate: {source_ip} sent at least "
                 f"{self.packet_threshold} packets within {self.window} seconds",
             ))
+        
+        if UDP in packet:
+            udp = packet[UDP]
+            pair = (source_ip, destination_ip)
+            self.udp_ports_by_pair[pair].add(udp.dport)
 
+            if ( 
+                len(self.udp_ports_by_pair[pair]) >= self.port_threshold
+                and pair not in self.alerted_udp_scan_pairs
+            ):
+                self.alerted_udp_scan_pairs.add(pair)
+                alerts.append((
+                    "HIGH",
+                    f"Possible UDP port scan: {source_ip} tried "
+                    f"{self.port_threshold} ports against {destination_ip}",
+                ))
+        
         if TCP not in packet:
             return alerts
 
