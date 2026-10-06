@@ -8,10 +8,12 @@ class IDSDetector:
         self.window = settings["window_seconds"]
         self.port_threshold = settings["port_scan_threshold"]
         self.syn_threshold = settings["syn_attempt_threshold"]
+        self.udp_threshold = settings["udp_attempt_threshold"]
         self.packet_threshold = settings["packet_rate_threshold"]
 
         self.packet_times = defaultdict(deque)
         self.syn_times = defaultdict(deque)
+        self.udp_times = defaultdict(deque)
         self.ports_by_pair = defaultdict(set)
         self.alerted_scan_pairs = set()
         self.udp_ports_by_pair = defaultdict(set)
@@ -51,6 +53,18 @@ class IDSDetector:
         
         if UDP in packet:
             udp = packet[UDP]
+            
+            recent_udp = self._remember_recent_time(
+                self.udp_times[source_ip], packet_time
+            )
+            if recent_udp == self.udp_threshold:
+                alerts.append((
+                    "HIGH",
+                    f"High UDP attempts: {source_ip} sent at least "
+                    f"{self.udp_threshold} UDP packets within "
+                    f"{self.window} seconds",
+                ))
+		 	       
             pair = (source_ip, destination_ip)
             self.udp_ports_by_pair[pair].add(udp.dport)
 
