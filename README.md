@@ -133,3 +133,13 @@ sudo .venv/bin/python live_monitor.py --interface lo
 ```
 
 Keep both terminals open while using the dashboard. Press Ctrl+C in each terminal to stop its program.
+
+### UDP detection
+
+The IDS can alert when a source sends the configured number of UDP packets within the configured time window. It also detects possible UDP port scans across multiple destination ports.
+
+To create and analyze the UDP practice capture:
+
+```bash
+python make_udp_sample.py
+python main.py udp-scan-sample.pcap
