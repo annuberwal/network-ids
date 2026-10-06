@@ -4,7 +4,9 @@ A beginner-friendly, offline network traffic analyzer built with Python and Scap
 
 ## Features
 
-- Detects IPv4 and IPv6 traffic, including TCP SYN packets sent to several different ports on the same target.
+- Detects IPv4 and IPv6 TCP/UDP port scans within the configured time window.
+- Detects UDP port scans and bursts of UDP attempts.
+- Supports a configurable list of trusted source IPs to ignore.
 - Detects a high number of TCP SYN packets from one source within a 10-second window.
 - Flags TCP packets with no flags set.
 - Prints alerts in the terminal and saves them to `alerts.txt`.
@@ -60,9 +62,10 @@ python main.py
 ```bash
 python make_sample.py
 python make_ipv6_sample.py
+python make_udp_sample.py
 ```
 
-These commands create the practice `.pcap` files locally, including an IPv6 port-scan example. They do not send packets over the network.
+These commands create the practice `.pcap` files locally, including IPv6 and UDP examples. They do not send packets over the network.
 
 ## Configuration
 
@@ -70,8 +73,10 @@ Detection settings are stored in `config.json` and used by both the PCAP analyze
 
 - `port_scan_threshold`: distinct destination ports needed for a port-scan alert.
 - `syn_attempt_threshold`: TCP SYN packets needed for a connection-attempt alert.
+- `udp_attempt_threshold`: UDP packets needed for a UDP-attempt alert.
 - `packet_rate_threshold`: packets needed for a packet-rate alert.
 - `window_seconds`: time window used by burst checks.
+- `ignored_source_ips`: source IPs excluded from all detection rules. Keep empty unless intentionally ignoring a trusted lab source.
 
 ## Safety and scope
 
@@ -97,8 +102,10 @@ The rules are simple learning examples. They can produce false positives or miss
 
 The IDS checks authorized lab traffic for:
 
-- Port scanning: one source sends TCP SYN packets to 3 or more different ports on the same target.
+- Port scanning: one source sends TCP SYN packets to 3 or more different ports on the same target within 10 seconds.
+- UDP port scanning: one source sends UDP packets to 3 or more different ports on the same target within 10 seconds.
 - Repeated connection attempts: one source sends 3 or more TCP SYN packets within 10 seconds.
+- UDP attempts: one source sends 3 or more UDP packets within 10 seconds.
 - High packet rate: one source sends 20 or more packets within 10 seconds.
 - Unusual TCP packets: a TCP packet has no flags set.
 
@@ -114,6 +121,15 @@ Run the included practice captures:
 .venv/bin/python main.py unusual-sample.pcap
 .venv/bin/python main.py burst-sample.pcap
 .venv/bin/python main.py ipv6-sample.pcap
+.venv/bin/python main.py udp-scan-sample.pcap
+```
+
+## Automated checks
+
+Run the detector regression tests from the project folder:
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
 ## Local dashboard
@@ -143,3 +159,4 @@ To create and analyze the UDP practice capture:
 ```bash
 python make_udp_sample.py
 python main.py udp-scan-sample.pcap
+```

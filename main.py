@@ -7,11 +7,6 @@ import json
 with open("config.json", encoding="utf-8") as config_file:
     settings = json.load(config_file)
 
-PORT_SCAN_THRESHOLD = settings["port_scan_threshold"]
-SYN_ATTEMPT_THRESHOLD = settings["syn_attempt_threshold"]
-PACKET_RATE_THRESHOLD = settings["packet_rate_threshold"]
-ATTEMPT_WINDOW_SECONDS = settings["window_seconds"]
-
 from scapy.all import IP, IPv6, ICMP, TCP, UDP, rdpcap, sniff
 from detector import IDSDetector
 
